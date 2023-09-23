@@ -4,30 +4,39 @@
         <Suspense>
           <Sidebar />
         </Suspense>
-      <div class="no-employee-warning" v-if="isNoEmployeeSelected">
+      <div class="no-employee-warning" v-if="!selectedCard">
         Выберите сотрудника, чтобы посмотреть его профиль
       </div>
-      <div class="employee" v-else-if="!isNoEmployeeSelected">
-        here will be component which will show employee card
+      <div class="employee" v-else-if="selectedCard">
+          <card-employee
+            :name="selectedCard.name"
+            :email="selectedCard.email"
+            :phone="selectedCard.phone"
+          >
+          </card-employee>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref } from "vue";
+import { computed } from "vue";
 import Sidebar from "../components/Sidebar.vue"
+import CardEmployee from "../components/CardEmployee.vue";
+import { useStore } from 'vuex';
 
 export default {
   name: 'MainPage',
   components: {
-    Sidebar
+    Sidebar,
+    CardEmployee,
   },
   setup() {
-    const isNoEmployeeSelected = ref(true);
+    const store = useStore();
+    const selectedCard = computed(() => store.state.selectedCard);
 
     return {
-      isNoEmployeeSelected,
+      selectedCard,
     }
   }
 }
@@ -56,7 +65,6 @@ export default {
   .main-wrapper {
   display: flex;
   border-radius: 10px;
-
   background: #fdfdfd;
   height: calc(100vh - 115px - 55px);
   box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);

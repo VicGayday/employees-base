@@ -9,18 +9,14 @@
       v-model.trim="searchQuery"
     />
     <div class="sidebar__label">Результаты</div>
-    <div class="sidebar__list">
-      <p v-if="!searchResults">ничего не найдено</p>
-      <div v-else-if="searchResults && searchResults.length">
-        <div v-for="(result) in searchResults" :key="result.name + Math.random()">
-          <card-employee
-            :name="result.name"
-            :email="result.email"
-            :phone="result.phone"
-          >
-          </card-employee>
+    <pre-loader v-if="isLoading"></pre-loader>
+    <div v-else class="sidebar__list">
+      <div v-if="searchResults && searchResults.length">
+        <div v-for="result in searchResults" :key="result.name + Math.random()">
+          <preview-card :cardData="result"> </preview-card>
         </div>
       </div>
+      <p v-else>{{ message }}</p>
     </div>
   </div>
 </template>
@@ -28,32 +24,44 @@
 <script>
 import { onMounted, ref, computed } from 'vue';
 import { useStore } from 'vuex';
-import CardEmployee from './CardEmployee.vue';
+import PreviewCard from './PreviewCard.vue';
+import PreLoader from "./PreLoader.vue";
 
 export default {
   name: "Sidebar",
   components: {
-   CardEmployee,
+   PreviewCard,
+   PreLoader,
   },
   async setup() {
    const store = useStore();
    const searchQuery = ref('');
+   const isLoading = ref(false);
+   const message = ref("начните поиск");
    const searchResults = computed(() => store.state.searchResults);
+   const unselectCard = () => {
+     store.commit('setSelectedCard', null);
+    }
 
     async function searchUsers() {
-      const names = searchQuery.value.split(',').map(name => name.trim());;
-      try {
-        const results = await Promise.all(names.map(name => {
-          return fetch(`https://jsonplaceholder.typicode.com/users?q=${name}`)
-            .then(response => response.json());
-        }));
-
-        store.dispatch('updateResults', results.flat());
-        searchQuery.value = '';
-      } catch (error) {
-        console.error(error);
+      isLoading.value = true;
+      unselectCard();
+      setTimeout(async () => { //добавляем задержку, чтобы увидеть прелоадер
+        const names = searchQuery.value.split(',').map(name => name.trim());;
+        try {
+          const results = await Promise.all(names.map(name => {
+            return fetch(`https://jsonplaceholder.typicode.com/users?q=${name}`)
+              .then(response => response.json());
+          }));
+          message.value = "ничего не найдено";
+          store.dispatch('updateResults', results.flat());
+          // searchQuery.value = ''; не очищаем input после выведения результатов
+        } catch (error) {
+          console.error(error);
+        }
+        isLoading.value = false;
+      }, 1500)
       }
-    }
 
   onMounted(() => {
     const inputField = document.querySelector('#search-input');
@@ -68,6 +76,9 @@ export default {
     searchQuery,
     searchResults,
     searchUsers,
+    isLoading,
+    message,
+    unselectCard,
    }
   }
 }
@@ -93,5 +104,9 @@ export default {
   font-size: 16px;
   font-weight: 600;
   line-height: 140%;
+}
+.sidebar__list {
+  overflow-y: scroll;
+  padding: 10px;
 }
 </style>

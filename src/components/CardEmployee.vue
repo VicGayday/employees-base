@@ -40,9 +40,7 @@
   grid-template-columns: 40% 60%;
   padding: 20px;
 }
-.card__image {
-  // width: 424px;
-}
+
 .card__wrapper {
   display: flex;
   flex-direction: column;
